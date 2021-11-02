@@ -1,0 +1,374 @@
+//W hierarchi klas jest klasa Main, nie ma jej tutaj gdyż program pisałem w Intellij
+//i tak wygodnie było zacząć od templatki
+//Wszystkie klasy wrzuciłem do jednego pliku zamiast osobnych plików, gdyż na takie rozwiązanie wyrazili zgodę
+//prowadzący podczas zadawania pytań podczas czasie trwania Egzaminu
+
+package com.company;
+
+
+import java.util.ArrayList;
+import java.util.Random;
+
+enum Werdykt{
+    umorzenie, przyznanie_winy, uniewinnienie;
+}
+
+enum UlubionaStategia{
+    I, II, III, IV;
+}
+
+class BladProgramu extends Exception {
+    private static final long serialVersionUID = 44;
+
+    public String getMessage() {
+        return " ---------- Błąd Programu!!! ---------- ";
+    }
+}
+
+//Hierarchia klas do strategii sędziowskich
+abstract class Strategia {
+
+}
+
+abstract class I extends Strategia {
+
+    static Werdykt wynik(String skarzacy, String oskarzony) {
+        if(skarzacy.length() > oskarzony.length())
+            return Werdykt.przyznanie_winy;
+        else if(skarzacy.length() < oskarzony.length())
+            return Werdykt.uniewinnienie;
+        else
+            return Werdykt.umorzenie;
+    }
+
+}
+
+abstract class II extends  Strategia {
+    static Werdykt wynik(int ileSkazanMaSkarzacy, int ileSkazanMaOskarzony) {
+        if(ileSkazanMaOskarzony > ileSkazanMaSkarzacy)
+            return Werdykt.przyznanie_winy;
+        else if(ileSkazanMaOskarzony < ileSkazanMaSkarzacy)
+            return Werdykt.uniewinnienie;
+        else
+            return Werdykt.umorzenie;
+    }
+
+}
+
+abstract class III extends Strategia {
+    static Werdykt wynik(int zadaniaSkarzacego, int zadaniaOskarzonego) {
+        if(zadaniaOskarzonego > zadaniaSkarzacego)
+            return Werdykt.przyznanie_winy;
+        else if(zadaniaOskarzonego < zadaniaSkarzacego)
+            return Werdykt.uniewinnienie;
+        else
+            return Werdykt.umorzenie;
+
+    }
+
+}
+abstract class IV extends Strategia {
+        static Werdykt wynik(int przyznanie, int uniewinnienie) {
+            Random rand = new Random();
+            int los = rand.nextInt(100);
+
+            if(los < przyznanie)
+                return Werdykt.przyznanie_winy;
+            else if(los < uniewinnienie)
+                return Werdykt.uniewinnienie;
+            else
+                return Werdykt.umorzenie;
+        }
+}
+
+//Ta klasa ma metode do losowania pisemnych stanowisk i dlugosc nie przekracza 5000znaków losowych z kodu ASCII od 32 do 126 znaku
+abstract class GenerujStanowisko {
+    static String generuj() {
+        StringBuilder stanowisko = new StringBuilder();
+        Random rand = new Random();
+        int dlugosc = rand.nextInt(5000)+1;
+        for(int i=dlugosc; i>0; i--) {
+            int los = rand.nextInt(95)+32;
+            stanowisko.append((char) los);
+        }
+        return stanowisko.toString();
+    }
+}
+
+//Miasto Bajtocja trzyma liste swoich obywateli i losuje z kim sie bedzie sądził w sądzie dany Obywatel - taka implementacja dużej ilości spraw sądowych
+abstract class Bajtocja{
+    private static ArrayList<Obywatel> obywatele;
+
+    Bajtocja(ArrayList<Obywatel> obywatele) {
+        Bajtocja.obywatele = obywatele;
+    }
+
+    //zakładamy że obywatela dodajemy do listy obywateli po jego stworzeniu konstruktorem, wiec
+    //obywatel nie będzie mógł się sądzić sam ze sobą
+    static Obywatel zKimSieKloce() {
+        Random rand = new Random();
+        return obywatele.get(rand.nextInt(obywatele.size()));
+    }
+
+
+}
+
+abstract class Obywatel {
+    private String imie;
+    private Sad wybranySad;
+    private int stanKonta;
+    private boolean immunitet;
+
+    private  Obywatel zKimMamSprawe;
+    private String pisemneStanowisko;
+
+    private int wysokoscZadanychKar=0;
+    private int iloscSkazan=0;
+
+
+    public String getImie() {
+        return imie;
+    }
+
+    public void setImie(String imie) {
+        this.imie = imie;
+    }
+
+    public void setWybranySad(Sad wybranySad) {
+        this.wybranySad = wybranySad;
+    }
+
+
+
+    public void setStanKonta(int stanKonta) {
+        this.stanKonta = stanKonta;
+    }
+
+
+
+    public void setImmunitet(boolean immunitet) {
+        this.immunitet = immunitet;
+    }
+
+
+    public void setzKimMamSprawe(Obywatel zKimMamSprawe) {
+        this.zKimMamSprawe = zKimMamSprawe;
+    }
+
+    public String getPisemneStanowisko() {
+        return pisemneStanowisko;
+    }
+
+    public void setPisemneStanowisko(String pisemneStanowisko) {
+        this.pisemneStanowisko = pisemneStanowisko;
+    }
+
+    public int getWysokoscZadanychKar() {
+        return wysokoscZadanychKar;
+    }
+
+
+    public int getIloscSkazan() {
+        return iloscSkazan;
+    }
+
+
+    //Główna metoda zadania, przyjmuje że można żądać do maksymalnie 2500 kary a kare sobie Obywatel wymyśla
+    void inicjujSpor() throws BladProgramu{
+        if(this.immunitet || zKimMamSprawe.immunitet) {
+            System.out.println("===== Sprawa Sądowa zakończona, brak werdyktu, co najmiej jedna osoba ma immunitet sędziowski =====");
+            return;
+        }
+
+        int zadanaKara;
+
+        Random rand = new Random();
+        zadanaKara = rand.nextInt(2500)+1;
+        this.wysokoscZadanychKar += zadanaKara;
+
+        Sedzia rostrzygajacy = wybranySad.wybierzSedziego();
+
+        Werdykt wynikRozprawy = rostrzygajacy.sadz(this  , this.zKimMamSprawe);
+
+        if(wynikRozprawy == Werdykt.przyznanie_winy) {
+            this.zKimMamSprawe.iloscSkazan += 1;
+            this.zKimMamSprawe.stanKonta -= zadanaKara;
+            this.stanKonta += zadanaKara;
+            System.out.println("===== Wygrał powód: "+this.imie+ " =====");
+        }
+        else if(wynikRozprawy == Werdykt.uniewinnienie) {
+
+            if(rostrzygajacy.getPracodawca().getOjciec() != null) {
+                this.wybranySad=rostrzygajacy.getPracodawca().getOjciec();
+                this.inicjujSpor();
+            }
+            else {
+                this.stanKonta -= zadanaKara;
+                this.zKimMamSprawe.stanKonta += zadanaKara;
+                System.out.println("===== Wygrał pozwany "+this.zKimMamSprawe.imie+" =====");
+            }
+
+        }
+        else if(wynikRozprawy == Werdykt.umorzenie){
+            if(rostrzygajacy.getPracodawca().getOjciec() != null) {
+                this.wybranySad=rostrzygajacy.getPracodawca().getOjciec();
+                this.inicjujSpor();
+            }
+            else {
+            System.out.println("===== Z powody braku wystarczających dowodów, sprawa została umorzona =====");}
+        }
+        else {
+            throw new BladProgramu();
+        }
+
+
+        rostrzygajacy.setRoztrzygnieteSprawy(rostrzygajacy.getRoztrzygnieteSprawy() + 1);
+
+
+    }
+
+
+}
+class Sedzia extends Obywatel {
+    Sedzia(int stanKonta, Sad wybranySad, Sad pracodawca, String imie) throws BladProgramu{
+        super.setImie(imie);
+
+        super.setImmunitet(true);
+        super.setStanKonta(stanKonta);
+        super.setWybranySad(wybranySad);
+        super.setPisemneStanowisko(GenerujStanowisko.generuj());
+
+        super.setzKimMamSprawe(Bajtocja.zKimSieKloce());
+
+
+        Random rand = new Random();
+        this.przyznanie = rand.nextInt(50)+1;
+
+        int uniewinnienie;
+        do {
+            uniewinnienie = rand.nextInt(100);
+        } while(uniewinnienie < this.przyznanie);
+        this.uniewinnienie=uniewinnienie;
+
+
+        this.pracodawca=pracodawca;
+        this.strategia=Sedzia.losujStrategie();
+    }
+
+    private final Sad pracodawca;
+    private final UlubionaStategia strategia;
+    private int roztrzygnieteSprawy = 0;
+    private final int przyznanie;
+    private final int uniewinnienie;
+
+    public Sad getPracodawca() {
+        return pracodawca;
+    }
+
+    public int getRoztrzygnieteSprawy() {
+        return roztrzygnieteSprawy;
+    }
+
+    public void setRoztrzygnieteSprawy(int roztrzygnieteSprawy) {
+        this.roztrzygnieteSprawy = roztrzygnieteSprawy;
+    }
+
+    static UlubionaStategia losujStrategie() throws BladProgramu{
+        Random rand = new Random();
+        int los = rand.nextInt(4)+1;
+        switch (los){
+            case 1:
+                return UlubionaStategia.I;
+            case 2:
+                return UlubionaStategia.II;
+            case 3:
+                return UlubionaStategia.III;
+            case 4:
+                return UlubionaStategia.IV;
+            default:
+                throw new BladProgramu();
+        }
+    }
+
+    Werdykt sadz(Obywatel skarzacy, Obywatel oskarzony) throws BladProgramu {
+        Werdykt wyrok;
+
+        switch (strategia){
+            case I:
+                wyrok = I.wynik(skarzacy.getPisemneStanowisko(), oskarzony.getPisemneStanowisko());
+                break;
+            case II:
+                wyrok = II.wynik(skarzacy.getIloscSkazan(), oskarzony.getIloscSkazan());
+                break;
+            case III:
+                wyrok = III.wynik(skarzacy.getWysokoscZadanychKar(), oskarzony.getWysokoscZadanychKar());
+                break;
+
+            case IV:
+                wyrok=IV.wynik(this.przyznanie, this.uniewinnienie);
+                break;
+            default:
+                throw new BladProgramu();
+
+        }
+        return wyrok;
+
+    }
+
+}
+class ZwyklyObywatel extends Obywatel {
+
+    ZwyklyObywatel(int stanKonta, Sad wybranySad, String imie) {
+        super.setImmunitet(false);
+        super.setStanKonta(stanKonta);
+        super.setWybranySad(wybranySad);
+        super.setPisemneStanowisko(GenerujStanowisko.generuj());
+        super.setzKimMamSprawe(Bajtocja.zKimSieKloce());
+        super.setImie(imie);
+    }
+
+}
+
+class Sad {
+
+    private Sad ojciec;
+    private ArrayList<Sad> podlegleSady;
+
+    private ArrayList<Sedzia> sedziowie;
+
+    public Sad getOjciec() {
+        return ojciec;
+    }
+
+    //Ponieważ wybór sedziego odbywa się tak jak w treści zadania, to może nastąpić złamanie zasady prawniczej
+    //Nemo iudex in causa sua (łac. Nikt nie może być sędzią we własnej sprawie)
+    Sedzia wybierzSedziego() throws BladProgramu{
+        int min = Integer.MAX_VALUE;
+        int ileSedzi = 0;
+
+        for(int i=0; i<sedziowie.size(); i++) {
+            if(sedziowie.get(i).getRoztrzygnieteSprawy() < min) {
+                min = sedziowie.get(i).getRoztrzygnieteSprawy();
+                ileSedzi=0;
+            }
+            else if(sedziowie.get(i).getRoztrzygnieteSprawy() == min) {
+                ileSedzi++;
+            }
+
+        }
+
+        Random rand = new Random();
+        int wybrany = rand.nextInt(ileSedzi)+1;
+
+        for(int i=0; i<sedziowie.size(); i++) {
+
+            if(sedziowie.get(i).getRoztrzygnieteSprawy() == min) {
+                wybrany--;
+                if(wybrany == 0) {
+                    return sedziowie.get(i);
+                }
+            }
+        }
+        throw new BladProgramu();
+    }
+}
